@@ -35,14 +35,11 @@
                     enable = true;
                   };
 
-                  packages = with pkgs; [ goose googleapis protobuf protoc-gen-go protoc-gen-go-grpc protoc-gen-doc grpc-gateway ];
+                  packages = with pkgs; [ goose flyctl ];
 
                   enterShell = ''
-                    echo "nBits Bridge shell activated!"
+                    echo "nBits chaintips shell activated!"
 
-                    export GOOGLEAPIS=${googleapis}
-                    export GRPC_GATEWAY_PROTO=${pkgs.grpc-gateway}
-                    export PROJECT_PATH=`pwd`
                   '';
                 }
               ];
