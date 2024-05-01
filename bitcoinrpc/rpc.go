@@ -35,9 +35,9 @@ type RpcError struct {
 }
 
 // NewRpcClient creates a new RpcClient
-func NewRpcClient(protocol, endpoint, port, username, password string) *RpcClient {
+func NewRpcClient(protocol string, host string, port int, username string, password string) *RpcClient {
 	return &RpcClient{
-		URL:      fmt.Sprintf("%s://%s:%s", protocol, endpoint, port),
+		URL:      fmt.Sprintf("%s://%s:%d", protocol, host, port),
 		Username: username,
 		Password: password,
 		Client:   &http.Client{},
