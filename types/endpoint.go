@@ -5,6 +5,7 @@ type Endpoint struct {
 	ChainID  int    `json:"chain_id"`
 	IP       string `json:"ip"`
 	Port     int    `json:"port"`
+	Protocol string `json:"protocol"`
 	Username string `json:"username"`
 	Password string `json:"password"`
 	Enabled  bool   `json:"enabled"`
