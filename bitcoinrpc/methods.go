@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/nbitslabs/chaintips/types"
+	"github.com/nbitslabs/chaintips/bitcoinrpc/types"
 )
 
 func (rpc *RpcClient) GetChainTips() ([]types.ChainTip, error) {
