@@ -1,10 +1,11 @@
 package tracker
 
 import (
-	"fmt"
+	"log"
 
 	"github.com/nbitslabs/chaintips/bitcoinrpc"
 	"github.com/nbitslabs/chaintips/storage"
+	"github.com/nbitslabs/chaintips/types"
 )
 
 type Tracker struct {
@@ -16,31 +17,43 @@ func NewTracker(db storage.Storage) *Tracker {
 }
 
 func (t *Tracker) Run() {
-	// Get all chains
 	chains, err := t.db.GetChains()
 	if err != nil {
-		fmt.Println("Failed to get chains:", err)
+		log.Println("Failed to get chains:", err)
+		return
 	}
 
-	// For each chain, get enabled endpoints
 	for _, chain := range chains {
 		endpoints, err := t.db.GetEnabledEndpoints(chain.ID)
 		if err != nil {
-			fmt.Println("Failed to get enabled endpoints:", err)
+			log.Println("Failed to get enabled endpoints for chain", chain.Identifier, ":", err)
+			continue
 		}
 
-		// For each endpoint, check if it's up
 		for _, endpoint := range endpoints {
-			fmt.Printf("Checking endpoint %+v\n", endpoint)
+			log.Printf("Checking endpoint %+v\n", endpoint)
 
 			rpcclient := bitcoinrpc.NewRpcClient(endpoint.Protocol, endpoint.Host, endpoint.Port, endpoint.Username, endpoint.Password)
 			tips, err := rpcclient.GetChainTips()
 			if err != nil {
-				fmt.Println("Failed to get chaintips:", err)
-				break
+				log.Println("Failed to get chaintips from", endpoint.Host, ":", err)
+				continue
 			}
+
 			for _, tip := range tips {
-				fmt.Printf("Chaintip: %+v\n", tip)
+				dbTip := types.ChainTip{
+					ChainID:    chain.ID,
+					EndpointID: endpoint.ID,
+					Height:     tip.Height,
+					Hash:       tip.Hash,
+					Branchlen:  tip.Branchlen,
+					Status:     tip.Status,
+				}
+				if err := t.db.UpsertChainTip(dbTip); err != nil {
+					log.Printf("Failed to upsert chaintip %+v: %v\n", tip, err)
+				} else {
+					log.Printf("Upserted chaintip %+v successfully\n", tip)
+				}
 			}
 		}
 	}

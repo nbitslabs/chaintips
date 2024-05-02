@@ -3,7 +3,7 @@ package types
 type ChainTip struct {
 	ID         int    `json:"id"`
 	ChainID    int    `json:"chain_id"`
-	EndPointID int    `json:"endpoint_id"`
+	EndpointID int    `json:"endpoint_id"`
 	Height     int64  `json:"height"`
 	Hash       string `json:"hash"`
 	Branchlen  int    `json:"branchlen"`
