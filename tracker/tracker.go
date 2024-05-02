@@ -41,6 +41,9 @@ func (t *Tracker) Run() {
 			}
 
 			for _, tip := range tips {
+				if tip.Status == "active" {
+					continue
+				}
 				dbTip := types.ChainTip{
 					ChainID:    chain.ID,
 					EndpointID: endpoint.ID,
