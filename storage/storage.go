@@ -11,4 +11,5 @@ type Storage interface {
 	LastBlock(chainID int) (types.Block, error)
 	BlockCount(chainID int) (int, error)
 	UpsertBlock(block types.Block, chainID int) error
+	BlockAtHeight(height int, chainID int) (types.Block, error)
 }

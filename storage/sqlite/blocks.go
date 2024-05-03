@@ -26,6 +26,11 @@ func (d *SqliteBackend) BlockCount(chainID int) (int, error) {
 	return count, nil
 }
 
+func (d *SqliteBackend) BlockAtHeight(height int, chainID int) (types.Block, error) {
+	row := d.db.QueryRow("SELECT id, height, hash, version, merkleroot, time, mediantime, nonce, bits, difficulty, chainwork, previousblockhash, chain_id FROM blocks WHERE height = ? AND chain_id = ?", height, chainID)
+	return scanBlock(row)
+}
+
 func (d *SqliteBackend) UpsertBlock(block types.Block, chainID int) error {
 	_, err := d.db.Exec("INSERT INTO blocks (height, hash, version, merkleroot, time, mediantime, nonce, bits, difficulty, chainwork, previousblockhash, chain_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (hash, height, chain_id) DO NOTHING", block.Height, block.Hash, block.Version, block.MerkleRoot, block.Time, block.MedianTime, block.Nonce, block.Bits, block.Difficulty, block.ChainWork, block.PreviousBlockHash, chainID)
 	return err
