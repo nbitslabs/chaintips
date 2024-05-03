@@ -80,13 +80,3 @@ func (d *SqliteBackend) GetChains() ([]types.Chain, error) {
 
 	return chains, nil
 }
-
-func (d *SqliteBackend) UpsertChainTip(tip types.ChainTip) error {
-	sqlStmt := `INSERT INTO chaintips (chain_id, endpoint_id, height, hash, branchlen, status) VALUES (?, ?, ?, ?, ?, ?)
-				ON CONFLICT (height, hash, endpoint_id, chain_id) DO UPDATE SET branchlen = excluded.branchlen, status = excluded.status;`
-	_, err := d.db.Exec(sqlStmt, tip.ChainID, tip.EndpointID, tip.Height, tip.Hash, tip.Branchlen, tip.Status)
-	if err != nil {
-		return fmt.Errorf("failed to upsert chaintip: %w", err)
-	}
-	return nil
-}

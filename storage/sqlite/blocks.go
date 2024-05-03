@@ -26,7 +26,7 @@ func (d *SqliteBackend) BlockCount(chainID int) (int, error) {
 	return count, nil
 }
 
-func (d *SqliteBackend) BlockAtHeight(height int, chainID int) (types.Block, error) {
+func (d *SqliteBackend) BlockAtHeight(height int64, chainID int) (types.Block, error) {
 	row := d.db.QueryRow("SELECT id, height, hash, version, merkleroot, time, mediantime, nonce, bits, difficulty, chainwork, previousblockhash, chain_id FROM blocks WHERE height = ? AND chain_id = ?", height, chainID)
 	return scanBlock(row)
 }
