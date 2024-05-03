@@ -38,6 +38,12 @@ func (t *Tracker) Run() {
 			defer syncWg.Done()
 			t.trackTips(chain)
 		}()
+
+		syncWg.Add(1)
+		go func() {
+			defer syncWg.Done()
+			t.linkChainTips(chain)
+		}()
 	}
 
 	syncWg.Wait()
