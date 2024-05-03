@@ -9,20 +9,32 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/nbitslabs/chaintips/types"
 	"github.com/pressly/goose/v3"
+	"github.com/rs/zerolog/log"
 )
 
 //go:embed migrations/*.sql
 var embeddedMigrations embed.FS
+
+var logger = log.With().Str("module", "sqlite").Logger()
 
 type SqliteBackend struct {
 	db *sql.DB
 }
 
 func NewSqliteBackend() (*SqliteBackend, error) {
-	db, err := sql.Open("sqlite3", os.Getenv("DB_PATH"))
+	path := os.Getenv("DB_PATH")
+	if path == "" {
+		return nil, fmt.Errorf("DB_PATH environment variable must be set")
+	}
+
+	db, err := sql.Open("sqlite3", path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
+
+	log.Info().
+		Str("path", path).
+		Msg("Database opened")
 
 	backend := &SqliteBackend{db: db}
 	if err := backend.Migrate(); err != nil {
