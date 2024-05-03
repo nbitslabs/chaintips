@@ -1,6 +1,7 @@
 package sqlite
 
 import (
+	"database/sql"
 	"fmt"
 
 	"github.com/nbitslabs/chaintips/types"
@@ -17,8 +18,8 @@ func (d *SqliteBackend) GetEnabledEndpoints(chainID int) ([]types.Endpoint, erro
 	var endpoints []types.Endpoint
 
 	for rows.Next() {
-		endpoint, err := scanEndpoint(rows)
-		if err != nil {
+		var endpoint types.Endpoint
+		if err := rows.Scan(&endpoint.ID, &endpoint.ChainID, &endpoint.Host, &endpoint.Port, &endpoint.Protocol, &endpoint.Username, &endpoint.Password, &endpoint.Enabled); err != nil {
 			return nil, fmt.Errorf("failed to scan endpoint: %w", err)
 		}
 		endpoints = append(endpoints, endpoint)
@@ -32,7 +33,7 @@ func (d *SqliteBackend) GetEnabledEndpoint(id int) (types.Endpoint, error) {
 	return scanEndpoint(row)
 }
 
-func scanEndpoint(row rowScanner) (types.Endpoint, error) {
+func scanEndpoint(row *sql.Row) (types.Endpoint, error) {
 	var endpoint types.Endpoint
 	err := row.Scan(&endpoint.ID, &endpoint.ChainID, &endpoint.Host, &endpoint.Port, &endpoint.Protocol, &endpoint.Username, &endpoint.Password, &endpoint.Enabled)
 	if err != nil {
