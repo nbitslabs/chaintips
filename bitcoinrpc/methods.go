@@ -20,3 +20,31 @@ func (rpc *RpcClient) GetChainTips() ([]types.ChainTip, error) {
 
 	return tips, nil
 }
+
+func (rpc *RpcClient) GetBestBlockHash() (string, error) {
+	result, err := rpc.Do("getbestblockhash", nil)
+	if err != nil {
+		return "", err
+	}
+
+	var hash string
+	if err := json.Unmarshal(result, &hash); err != nil {
+		return "", fmt.Errorf("failed to unmarshal getbestblockhash response: %v", err)
+	}
+
+	return hash, nil
+}
+
+func (rpc *RpcClient) GetBlockHeader(hash string) (types.BlockHeader, error) {
+	result, err := rpc.Do("getblockheader", []interface{}{hash})
+	if err != nil {
+		return types.BlockHeader{}, err
+	}
+
+	var header types.BlockHeader
+	if err := json.Unmarshal(result, &header); err != nil {
+		return types.BlockHeader{}, fmt.Errorf("failed to unmarshal getblockheader response: %v", err)
+	}
+
+	return header, nil
+}
