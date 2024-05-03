@@ -5,6 +5,7 @@ import "github.com/nbitslabs/chaintips/types"
 type Storage interface {
 	GetChains() ([]types.Chain, error)
 	GetEnabledEndpoints(chainID int) ([]types.Endpoint, error)
+	GetEnabledEndpoint(id int) (types.Endpoint, error)
 	UpsertChainTip(tip types.ChainTip) error
 	FirstBlock(chainID int) (types.Block, error)
 	LastBlock(chainID int) (types.Block, error)
