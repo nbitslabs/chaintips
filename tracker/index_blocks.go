@@ -144,7 +144,7 @@ func (t *Tracker) backfillBlocks(chain types.Chain, rpcclient *bitcoinrpc.RpcCli
 
 	lastHeight := int64(-1)
 
-	for bestBlockHash != target || (target == ZeroHash && lastHeight == 0) {
+	for (bestBlockHash != target) || (target == ZeroHash && lastHeight == 0) {
 		block, err := rpcclient.GetBlockHeader(bestBlockHash)
 		if err != nil {
 			log.Error().Err(err).
@@ -185,5 +185,6 @@ func (t *Tracker) backfillBlocks(chain types.Chain, rpcclient *bitcoinrpc.RpcCli
 			Msg("Inserted block")
 
 		bestBlockHash = block.PreviousBlockHash
+		lastHeight = block.Height
 	}
 }
