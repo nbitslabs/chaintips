@@ -17,7 +17,7 @@ func (t *Tracker) linkChainTips(chain types.Chain) {
 		case <-ticker.C:
 			unlinkedTips, err := t.db.GetUnlinkedChainTips(chain.ID)
 			if err != nil {
-				logger.Error().Err(err).
+				log.Error().Err(err).
 					Int("chain_id", chain.ID).
 					Str("chain_identifier", chain.Identifier).
 					Msg("Failed to get unlinked chaintips")
