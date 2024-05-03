@@ -14,4 +14,5 @@ type Block struct {
 	ChainWork         string `json:"chain_work"`
 	PreviousBlockHash string `json:"previous_block_hash"`
 	ChainID           int    `json:"chain_id"`
+	Fork              bool   `json:"fork"`
 }

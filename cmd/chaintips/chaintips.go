@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 
+	"github.com/nbitslabs/chaintips/api"
 	"github.com/nbitslabs/chaintips/storage/sqlite"
 	"github.com/nbitslabs/chaintips/tracker"
 	"github.com/rs/zerolog"
@@ -21,5 +22,8 @@ func main() {
 	}
 
 	tracker := tracker.NewTracker(db)
-	tracker.Run()
+	go tracker.Run()
+
+	api := api.NewServer(db)
+	api.Serve()
 }

@@ -12,5 +12,6 @@ type Storage interface {
 	BlockCount(chainID int) (int, error)
 	UpsertBlock(block types.Block, chainID int) error
 	BlockAtHeight(height int64, chainID int) (types.Block, error)
+	GetNotableBlocks(chainID int) ([]types.Block, error)
 	GetUnlinkedChainTips(chainID int) ([]types.ChainTip, error)
 }
