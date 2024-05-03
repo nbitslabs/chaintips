@@ -119,6 +119,8 @@ func (t *Tracker) indexBlocks(chain types.Chain) {
 			}
 		}
 	}
+
+	syncWg.Done()
 }
 
 func (t *Tracker) startBackfill(chain types.Chain, rpcclient *bitcoinrpc.RpcClient) {
