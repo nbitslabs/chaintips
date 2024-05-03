@@ -187,4 +187,10 @@ func (t *Tracker) backfillBlocks(chain types.Chain, rpcclient *bitcoinrpc.RpcCli
 		bestBlockHash = block.PreviousBlockHash
 		lastHeight = block.Height
 	}
+
+	log.Info().
+		Str("chain_identifier", chain.Identifier).
+		Int("chain_id", chain.ID).
+		Str("target_block", target).
+		Msg("Backfill complete")
 }
