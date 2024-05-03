@@ -8,12 +8,12 @@ import (
 )
 
 func (d *SqliteBackend) FirstBlock(chainID int) (types.Block, error) {
-	row := d.db.QueryRow("SELECT * FROM blocks WHERE chain_id = ? ORDER BY height ASC LIMIT 1", chainID)
+	row := d.db.QueryRow("SELECT id, height, hash, version, merkleroot, time, mediantime, nonce, bits, difficulty, chainwork, previousblockhash, chain_id FROM blocks WHERE chain_id = ? ORDER BY height ASC LIMIT 1", chainID)
 	return scanBlock(row)
 }
 
 func (d *SqliteBackend) LastBlock(chainID int) (types.Block, error) {
-	row := d.db.QueryRow("SELECT * FROM blocks WHERE chain_id = ? ORDER BY height DESC LIMIT 1", chainID)
+	row := d.db.QueryRow("SELECT id, height, hash, version, merkleroot, time, mediantime, nonce, bits, difficulty, chainwork, previousblockhash, chain_id FROM blocks WHERE chain_id = ? ORDER BY height DESC LIMIT 1", chainID)
 	return scanBlock(row)
 }
 
