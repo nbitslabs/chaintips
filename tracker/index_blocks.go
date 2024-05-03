@@ -9,9 +9,66 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+const ZeroHash = "0000000000000000000000000000000000000000000000000000000000000000"
+
 func (t *Tracker) indexBlocks(chain types.Chain) {
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
+
+	endpoints, err := t.db.GetEnabledEndpoints(chain.ID)
+	if err != nil {
+		log.Error().Err(err).
+			Int("chain_id", chain.ID).
+			Str("chain_identifier", chain.Identifier).
+			Msg("Failed to get enabled endpoints")
+		return
+	}
+
+	if len(endpoints) == 0 {
+		log.Warn().
+			Int("chain_id", chain.ID).
+			Msg("No enabled endpoints")
+		return
+	}
+
+	endpoint := endpoints[0]
+
+	rpcclient := bitcoinrpc.NewRpcClient(endpoint.Protocol, endpoint.Host, endpoint.Port, endpoint.Username, endpoint.Password)
+
+	blockCount, err := t.db.BlockCount(chain.ID)
+	if err != nil {
+		log.Error().Err(err).
+			Int("chain_id", chain.ID).
+			Msg("Failed to get block count")
+		return
+	}
+
+	if blockCount == 0 {
+		log.Info().
+			Int("chain_id", chain.ID).
+			Msg("No blocks in database, starting initial sync")
+
+		go t.startBackfill(chain, rpcclient)
+	} else {
+		firstBlock, err := t.db.FirstBlock(chain.ID)
+		if err != nil {
+			log.Error().Err(err).
+				Int("chain_id", chain.ID).
+				Msg("Failed to get first block")
+			return
+		}
+
+		if firstBlock.Height != 0 {
+			log.Info().
+				Int("chain_id", chain.ID).
+				Str("chain_identifier", chain.Identifier).
+				Str("first_block_hash", firstBlock.Hash).
+				Int64("first_block_height", firstBlock.Height).
+				Msg("Not yet synced to genesis block, continuing backfill")
+
+			go t.backfillBlocks(chain, rpcclient, firstBlock.PreviousBlockHash, ZeroHash)
+		}
+	}
 
 	for {
 		select {
@@ -21,64 +78,44 @@ func (t *Tracker) indexBlocks(chain types.Chain) {
 				Str("chain_identifier", chain.Identifier).
 				Msg("Indexing blocks")
 
-			endpoints, err := t.db.GetEnabledEndpoints(chain.ID)
-			if err != nil {
-				log.Error().Err(err).
-					Int("chain_id", chain.ID).
-					Str("chain_identifier", chain.Identifier).
-					Msg("Failed to get enabled endpoints")
-				continue
-			}
-
-			if len(endpoints) == 0 {
-				log.Warn().
-					Int("chain_id", chain.ID).
-					Msg("No enabled endpoints")
-				continue
-			}
-
-			endpoint := endpoints[0]
-
-			rpcclient := bitcoinrpc.NewRpcClient(endpoint.Protocol, endpoint.Host, endpoint.Port, endpoint.Username, endpoint.Password)
-
-			blockCount, err := t.db.BlockCount(chain.ID)
-			if err != nil {
-				log.Error().Err(err).
-					Int("chain_id", chain.ID).
-					Msg("Failed to get block count")
-				continue
-			}
-
 			if blockCount == 0 {
-				log.Info().
-					Int("chain_id", chain.ID).
-					Msg("No blocks in database, starting initial sync")
-
-				t.startBackfill(chain, rpcclient)
-			} else {
-				firstBlock, err := t.db.FirstBlock(chain.ID)
+				blockCount, err = t.db.BlockCount(chain.ID)
 				if err != nil {
 					log.Error().Err(err).
 						Int("chain_id", chain.ID).
-						Msg("Failed to get first block")
+						Msg("Failed to get block count")
 					continue
 				}
+			}
 
-				if firstBlock.Height != 0 {
-					log.Info().
-						Int("chain_id", chain.ID).
-						Str("chain_identifier", chain.Identifier).
-						Str("first_block_hash", firstBlock.Hash).
-						Int64("first_block_height", firstBlock.Height).
-						Msg("Not yet synced to genesis block, continuing backfill")
+			if blockCount == 0 {
+				continue
+			}
 
-					backFillLimit := 20
-					if firstBlock.Height < 20 {
-						backFillLimit = int(firstBlock.Height)
-					}
+			lastBlock, err := t.db.LastBlock(chain.ID)
+			if err != nil {
+				log.Error().Err(err).
+					Int("chain_id", chain.ID).
+					Msg("Failed to get last block")
+				continue
+			}
 
-					t.backfillBlocks(chain, rpcclient, firstBlock.PreviousBlockHash, backFillLimit)
-				}
+			bestBlockHash, err := rpcclient.GetBestBlockHash()
+			if err != nil {
+				log.Error().Err(err).
+					Int("chain_id", chain.ID).
+					Msg("Failed to get best block hash")
+				continue
+			}
+
+			if lastBlock.Hash != bestBlockHash {
+				log.Info().
+					Str("chain_identifier", chain.Identifier).
+					Int("chain_id", chain.ID).
+					Str("last_block_hash", lastBlock.Hash).
+					Str("best_block_hash", bestBlockHash).
+					Msg("Populating block segment")
+				t.backfillBlocks(chain, rpcclient, bestBlockHash, lastBlock.Hash)
 			}
 		}
 	}
@@ -94,18 +131,20 @@ func (t *Tracker) startBackfill(chain types.Chain, rpcclient *bitcoinrpc.RpcClie
 		return
 	}
 
-	t.backfillBlocks(chain, rpcclient, bestBlockHash, 20)
+	t.backfillBlocks(chain, rpcclient, bestBlockHash, ZeroHash)
 }
 
-func (t *Tracker) backfillBlocks(chain types.Chain, rpcclient *bitcoinrpc.RpcClient, bestBlockHash string, count int) {
+func (t *Tracker) backfillBlocks(chain types.Chain, rpcclient *bitcoinrpc.RpcClient, bestBlockHash string, target string) {
 	log.Info().
 		Str("chain_identifier", chain.Identifier).
 		Int("chain_id", chain.ID).
 		Str("block_hash", bestBlockHash).
-		Int("count", count).
+		Str("target_block", target).
 		Msg("Backfilling blocks")
 
-	for i := 0; i < count; i++ {
+	lastHeight := int64(-1)
+
+	for bestBlockHash != target || (target == ZeroHash && lastHeight == 0) {
 		block, err := rpcclient.GetBlockHeader(bestBlockHash)
 		if err != nil {
 			log.Error().Err(err).
