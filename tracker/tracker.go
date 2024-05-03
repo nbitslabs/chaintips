@@ -9,8 +9,6 @@ import (
 
 var logger = log.With().Str("module", "tracker").Logger()
 
-var syncWg sync.WaitGroup
-
 type Tracker struct {
 	db storage.Storage
 }
@@ -26,10 +24,20 @@ func (t *Tracker) Run() {
 		return
 	}
 
+	syncWg := sync.WaitGroup{}
+
 	for _, chain := range chains {
-		go t.indexBlocks(chain)
-		go t.trackTips(chain)
-		syncWg.Add(2)
+		syncWg.Add(1)
+		go func() {
+			defer syncWg.Done()
+			t.indexBlocks(chain)
+		}()
+
+		syncWg.Add(1)
+		go func() {
+			defer syncWg.Done()
+			t.trackTips(chain)
+		}()
 	}
 
 	syncWg.Wait()

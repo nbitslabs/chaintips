@@ -87,5 +87,4 @@ func (t *Tracker) trackTips(chain types.Chain) {
 			}
 		}
 	}
-	syncWg.Done()
 }
