@@ -25,6 +25,7 @@ func (t *Tracker) Run() {
 	}
 
 	for _, chain := range chains {
+		t.indexBlocks(chain)
 		endpoints, err := t.db.GetEnabledEndpoints(chain.ID)
 		if err != nil {
 			log.Error().Err(err).
